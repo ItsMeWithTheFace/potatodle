@@ -10,26 +10,28 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
 )
 
 var (
-	Token             = ""
-	wordleHeaderRegex = regexp.MustCompile(`Wordle \w* [0-6]\/[0-6]`)
+	wordleHeaderRegex = regexp.MustCompile(`Wordle \w* [0-6X]\/[0-6]`)
 	potatoRegex       = regexp.MustCompile(`🟩`)
 	sweetPotatoRegex  = regexp.MustCompile(`🟨`)
-	GuildID           = ""
 	RemoveCommands    = false
 )
 
 func init() {
-	flag.BoolVar(&RemoveCommands, "rmcmd", true, "Remove all commands after shutdowning or not")
-	flag.StringVar(&Token, "t", "", "Bot token")
-	flag.StringVar(&GuildID, "g", "", "Guild ID")
+	flag.BoolVar(&RemoveCommands, "rmcmd", false, "Remove all commands after shutdowning or not")
 	flag.Parse()
 }
 
 func main() {
-	dg, err := discordgo.New(fmt.Sprintf("Bot %s", Token))
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Printf("error loading .env: %s", err.Error())
+	}
+
+	dg, err := discordgo.New(fmt.Sprintf("Bot %s", os.Getenv("BOT_TOKEN")))
 	if err != nil {
 		fmt.Printf("error creating session: %s\n", err.Error())
 		return
@@ -49,7 +51,7 @@ func main() {
 	fmt.Println("Adding commands...")
 	registeredCommands := make([]*discordgo.ApplicationCommand, len(Commands))
 	for i, v := range Commands {
-		cmd, err := dg.ApplicationCommandCreate(dg.State.User.ID, GuildID, v)
+		cmd, err := dg.ApplicationCommandCreate(dg.State.User.ID, os.Getenv("GUILD_ID"), v)
 		if err != nil {
 			fmt.Printf("Cannot create '%v' command: %v", v.Name, err)
 			return
@@ -67,7 +69,7 @@ func main() {
 
 	if RemoveCommands {
 		for _, v := range registeredCommands {
-			err := dg.ApplicationCommandDelete(dg.State.User.ID, GuildID, v.ID)
+			err := dg.ApplicationCommandDelete(dg.State.User.ID, os.Getenv("GUILD_ID"), v.ID)
 			if err != nil {
 				fmt.Printf("Cannot delete '%v' command: %v", v.Name, err)
 				return
