@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
-	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,6 +19,10 @@ var (
 	sweetPotatoRegex  = regexp.MustCompile(`🟨`)
 	RemoveCommands    = false
 )
+
+func healthcheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
 
 func init() {
 	flag.BoolVar(&RemoveCommands, "rmcmd", false, "Remove all commands after shutdowning or not")
@@ -61,11 +65,11 @@ func main() {
 
 	defer dg.Close()
 
-	// Wait here until CTRL-C or other term signal is received.
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-	fmt.Println("Press Ctrl+C to exit")
-	<-stop
+	http.HandleFunc("/healthcheck", healthcheck)
+	err = http.ListenAndServe(":3000", nil)
+	if err != nil {
+		fmt.Printf("error starting server: %s", err.Error())
+	}
 
 	if RemoveCommands {
 		for _, v := range registeredCommands {
