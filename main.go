@@ -66,7 +66,7 @@ func main() {
 	defer dg.Close()
 
 	http.HandleFunc("/healthcheck", healthcheck)
-	err = http.ListenAndServe(":3000", nil)
+	err = http.ListenAndServe(":10000", nil)
 	if err != nil {
 		fmt.Printf("error starting server: %s", err.Error())
 	}
